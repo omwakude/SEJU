@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Engg. Dashboard Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f0f2f5; color: #1e293b; }
+        .navbar { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 1rem 0; }
+        .navbar-brand { font-weight: 700; font-size: 1.5rem; color: #f8fafc !important; letter-spacing: 0.5px;}
+        .nav-pills .nav-link { color: #94a3b8; border-radius: 8px; margin: 0 0.2rem; font-weight: 500; }
+        .nav-pills .nav-link.active { background-color: #3b82f6; color: #fff; }
+        
+        /* Global Control Panel */
+        .control-panel { background: #fff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); padding: 15px; margin-top: -20px; position: relative; z-index: 10; margin-bottom: 2rem;}
+        
+        .card { border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .form-control, .form-select { border-radius: 8px; border-color: #cbd5e1; }
+        .form-control:focus, .form-select:focus { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); border-color: #3b82f6; }
+        
+        .btn-primary { background: #3b82f6; border: none; font-weight: 600; border-radius: 8px;}
+        .btn-primary:hover { background: #2563eb; }
+        .btn-success { background: #10b981; border: none; font-weight: 600; border-radius: 8px;}
+        
+        /* Custom Toggle */
+        .form-switch .form-check-input { width: 3rem; height: 1.5rem; cursor: pointer; }
+        .form-switch .form-check-input:checked { background-color: #10b981; border-color: #10b981; }
+        .form-switch .form-check-input:not(:checked) { background-color: #ef4444; border-color: #ef4444; }
+        .status-text { font-weight: 600; width: 60px; margin-left: 10px; font-size: 0.9rem;}
+        
+        .student-img { width: 48px; height: 48px; object-fit: cover; border-radius: 12px; border: 2px solid #e2e8f0; }
+        .profile-img-lg { width: 120px; height: 120px; object-fit: cover; border-radius: 20px; border: 4px solid #3b82f6; box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);}
+        .table td { vertical-align: middle; }
+        
+        /* Stat Cards */
+        .stat-card { background: #f8fafc; border-radius: 12px; padding: 1.5rem; text-align: center; border: 1px solid #e2e8f0;}
+        .stat-value { font-size: 2rem; font-weight: 700; color: #0f172a; line-height: 1;}
+        .stat-label { font-size: 0.85rem; color: #64748b; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; margin-top: 5px;}
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg pb-4">
+    <div class="container">
+        <a class="navbar-brand" href="#"><i class="fa-solid fa-building-columns me-2 text-primary"></i> Engg. Dashboard Pro</a>
+        <div class="collapse navbar-collapse justify-content-end">
+            <ul class="nav nav-pills" id="myTab" role="tablist">
+                <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#attendanceTab"><i class="fa-solid fa-clipboard-user me-1"></i> Roll Call</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#studentsTab"><i class="fa-solid fa-address-book me-1"></i> Roster</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#analyticsTab"><i class="fa-solid fa-chart-pie me-1"></i> Analytics</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container pb-5">
+    
+    <div class="control-panel d-flex flex-wrap gap-3 align-items-center justify-content-between">
+        <div class="d-flex flex-wrap gap-2 flex-grow-1">
+            <select id="globalBranch" class="form-select w-auto fw-medium text-primary" onchange="refreshApp()">
+                <option value="ALL">🏫 All Branches</option>
+                <option value="Computer Engineering">Computer Engineering</option>
+                <option value="Information Technology">Information Technology</option>
+                <option value="Electronics & Telecom">Electronics & Telecom</option>
+                <option value="Mechanical Engineering">Mechanical Engineering</option>
+                <option value="Civil Engineering">Civil Engineering</option>
+            </select>
+            <select id="globalSem" class="form-select w-auto fw-medium text-primary" onchange="refreshApp()">
+                <option value="ALL">📚 All Semesters</option>
+                <option value="1">Semester 1</option>
+                <option value="2">Semester 2</option>
+                <option value="3">Semester 3</option>
+                <option value="4">Semester 4</option>
+                <option value="5">Semester 5</option>
+                <option value="6">Semester 6</option>
+                <option value="7">Semester 7</option>
+                <option value="8">Semester 8</option>
+            </select>
+        </div>
+        <div class="input-group w-auto">
+            <span class="input-group-text bg-light"><i class="fa-solid fa-search text-muted"></i></span>
+            <input type="text" id="globalSearch" class="form-control" placeholder="Search by name or roll no..." onkeyup="refreshApp()">
+        </div>
+    </div>
+
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="attendanceTab">
+            <div class="card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="mb-0 fw-bold">Daily Register</h4>
+                    <div class="d-flex gap-2">
+                        <input type="date" id="attendanceDate" class="form-control" onchange="refreshApp()">
+                        <button class="btn btn-outline-success text-nowrap" onclick="exportCSV()"><i class="fa-solid fa-file-csv me-1"></i> Export CSV</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive mb-4">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light"><tr><th>Student</th><th>Roll No</th><th>Branch & Sem</th><th>Attendance Status</th></tr></thead>
+                        <tbody id="attendanceTableBody"></tbody>
+                    </table>
+                </div>
+                <button class="btn btn-primary w-100 py-3 fs-5" onclick="submitAttendance()"><i class="fa-solid fa-cloud-arrow-up me-2"></i> Save Changes to Database</button>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="studentsTab">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="card p-4 sticky-top" style="top: 20px;">
+                        <h5 class="mb-4 fw-bold" id="formTitle">Enroll New Student</h5>
+                        <form id="studentForm">
+                            <input type="hidden" id="editStudentId">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted">Profile Photo</label>
+                                <input type="file" id="studentPhoto" class="form-control" accept="image/*">
+                            </div>
+                            <div class="mb-3"><input type="text" id="studentName" class="form-control" placeholder="Full Name" required></div>
+                            <div class="mb-3"><input type="text" id="studentRoll" class="form-control" placeholder="Roll No (e.g., CS-601)" required></div>
+                            <div class="mb-3">
+                                <select id="studentBranch" class="form-select" required>
+                                    <option value="" disabled selected>Select Branch...</option>
+                                    <option value="Computer Engineering">Computer Engineering</option>
+                                    <option value="Information Technology">Information Technology</option>
+                                    <option value="Electronics & Telecom">Electronics & Telecom</option>
+                                    <option value="Mechanical Engineering">Mechanical Engineering</option>
+                                    <option value="Civil Engineering">Civil Engineering</option>
+                                </select>
+                            </div>
+                            <div class="mb-4"><input type="number" id="studentSem" class="form-control" placeholder="Semester (1-8)" min="1" max="8" required></div>
+                            <button type="submit" class="btn btn-success w-100" id="submitBtn"><i class="fa-solid fa-user-plus me-1"></i> Save Student</button>
+                            <button type="button" class="btn btn-light w-100 mt-2 d-none border" id="cancelEditBtn" onclick="resetForm()">Cancel Edit</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-lg-8">
+                    <div class="card p-4">
+                        <h5 class="mb-4 fw-bold">Filtered Roster</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light"><tr><th>Profile</th><th>Details</th><th>Academic Info</th><th>Actions</th></tr></thead>
+                                <tbody id="studentDirectoryBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="analyticsTab">
+            <div class="row g-4">
+                <div class="col-lg-5">
+                    <div class="card p-4 h-100">
+                        <h5 class="fw-bold mb-4">Filtered Class Overview</h5>
+                        <div style="position: relative; height:250px; width:100%">
+                            <canvas id="overallChart"></canvas>
+                        </div>
+                        <div id="classStatsText" class="text-center mt-3 text-muted small"></div>
+                    </div>
+                </div>
+                <div class="col-lg-7">
+                    <div class="card p-4 h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="fw-bold mb-0">Individual Student Report</h5>
+                            <select id="studentSelect" class="form-select w-50" onchange="renderIndividualAnalytics()">
+                                <option value="">-- Search / Select Student --</option>
+                            </select>
+                        </div>
+                        
+                        <div id="individualStats" class="text-center mt-2" style="display: none;">
+                            <img id="statImg" src="" class="profile-img-lg mb-3">
+                            <h4 id="statName" class="fw-bold text-dark mb-0"></h4>
+                            <p id="statRoll" class="text-primary fw-medium mb-4"></p>
+                            
+                            <div class="row g-3 px-4">
+                                <div class="col-4">
+                                    <div class="stat-card">
+                                        <div class="stat-value text-success" id="statP">0</div>
+                                        <div class="stat-label">Present</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="stat-card">
+                                        <div class="stat-value text-danger" id="statA">0</div>
+                                        <div class="stat-label">Absent</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="stat-card">
+                                        <div class="stat-value text-primary" id="statPerc">0%</div>
+                                        <div class="stat-label">Rate</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="placeholderText" class="text-center text-muted my-5">
+                            <i class="fa-solid fa-magnifying-glass-chart fa-3x mb-3 opacity-25"></i>
+                            <p>Select a student from the dropdown or click "View Stats" in the Roster to generate a report.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

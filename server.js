@@ -3,11 +3,21 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
+const nodemailer = require('nodemailer'); 
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json({ limit: '10mb' })); 
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Email Transporter Setup 
+const transporter = nodemailer.createTransport({
+    service: 'gmail', 
+    auth: {
+        user: 'your-email@gmail.com', 
+        pass: 'your-app-password'     
+    }
+});
 
 // MongoDB Connection
 const dbURI = 'mongodb+srv://startup1technologymanager_db_user:ZfLsGc7zhxXEexCr@startup1.c0eqhmi.mongodb.net/Startup1?retryWrites=true&w=majority&appName=Startup1';
@@ -21,12 +31,16 @@ const StudentSchema = new mongoose.Schema({
     rollNo: String,
     branch: String,
     semester: Number,
+    parentEmail: String, 
     photoBase64: String
 });
 const Student = mongoose.model('Student', StudentSchema);
 
 const AttendanceSchema = new mongoose.Schema({
-    date: { type: String, required: true, unique: true },
+    date: { type: String, required: true },
+    branch: { type: String, required: true }, 
+    semester: { type: String, required: true }, 
+    subject: { type: String, required: true }, 
     records: [{
         studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Student' },
         status: { type: String, enum: ['Present', 'Absent'] }
@@ -56,22 +70,48 @@ app.delete('/api/students/:id', async (req, res) => {
     res.json({ message: 'Student deleted' });
 });
 
-app.post('/api/attendance', async (req, res) => {
-    const { date, records } = req.body;
-    const attendance = await Attendance.findOneAndUpdate(
-        { date: date }, { records: records }, { new: true, upsert: true } 
-    );
-    res.json(attendance);
+app.get('/api/attendance/specific', async (req, res) => {
+    const { date, branch, semester, subject } = req.query;
+    const attendance = await Attendance.findOne({ date, branch, semester, subject });
+    res.json(attendance || { records: [] });
 });
 
-app.get('/api/attendance/:date', async (req, res) => {
-    const attendance = await Attendance.findOne({ date: req.params.date });
-    res.json(attendance || { records: [] });
+app.post('/api/attendance', async (req, res) => {
+    const { date, branch, semester, subject, records } = req.body;
+    const attendance = await Attendance.findOneAndUpdate(
+        { date: date, branch: branch, semester: semester, subject: subject }, 
+        { records: records }, 
+        { new: true, upsert: true } 
+    );
+    res.json(attendance);
 });
 
 app.get('/api/analytics', async (req, res) => {
     const attendances = await Attendance.find().populate('records.studentId');
     res.json(attendances);
+});
+
+app.post('/api/notify', async (req, res) => {
+    const { absentees, date, subject } = req.body;
+    
+    try {
+        for (let student of absentees) {
+            if (student.parentEmail) {
+                const mailOptions = {
+                    from: 'your-email@gmail.com',
+                    to: student.parentEmail,
+                    subject: `Attendance Alert: ${student.name} marked Absent`,
+                    text: `Dear Parent,\n\nThis is to inform you that your ward, ${student.name} (Roll No: ${student.rollNo}), was marked absent today (${date}) for the subject: ${subject}.\n\nRegards,\nCollege Administration`
+                };
+                // await transporter.sendMail(mailOptions); 
+                console.log(`Mock Email sent to ${student.parentEmail} for ${student.name}`);
+            }
+        }
+        res.json({ success: true, message: 'Emails sent successfully!' });
+    } catch (error) {
+        console.error("Email Error:", error);
+        res.status(500).json({ success: false, error: 'Failed to send emails' });
+    }
 });
 
 const PORT = 3000;
